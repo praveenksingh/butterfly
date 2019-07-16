@@ -34,14 +34,12 @@ public class PomChangePlugin extends AbstractArtifactPomOperation<PomChangePlugi
     private String extensions;
     private List<PluginExecution> executions;
     private List<Dependency> pluginDependencies;
-    private Object goals;
 
     // Removable properties, letting them to have default values, or be managed when applicable.
     private boolean removeVersion = false;
     private boolean removeExtensions = false;
     private boolean removeExecutions = false;
     private boolean removePluginDependencies = false;
-    private boolean removeGoals = false;
 
     // What to do if the dependency that is supposed to be changed is not present
     private IfNotPresent ifNotPresent = IfNotPresent.Fail;
@@ -76,34 +74,29 @@ public class PomChangePlugin extends AbstractArtifactPomOperation<PomChangePlugi
     }
 
     public PomChangePlugin setExtensions(String extensions) {
-        checkForBlankString("Extensions", version);
+        checkForBlankString("Extensions", extensions);
         this.extensions = extensions;
         return this;
     }
 
     public PomChangePlugin setExecutions(List<PluginExecution> executions) {
+        checkForNull("Executions", executions);
         Map<String, PluginExecution> executionMap = new LinkedHashMap<>();
-        if (executions != null) {
-            for (PluginExecution exec : executions) {
-                if (executionMap.containsKey(exec.getId())) {
-                    throw new IllegalStateException("You cannot have two plugin executions with the same " +
-                            "(or missing) <id/> elements.\nOffending execution\n\nId: '" + exec.getId()
-                            + "'\nPlugin: '" + this.groupId + ":" + this.artifactId + "'\n\n");
-                }
-                executionMap.put(exec.getId(), exec);
+        for (PluginExecution exec : executions) {
+            if (executionMap.containsKey(exec.getId())) {
+                throw new IllegalStateException("You cannot have two plugin executions with the same " +
+                        "(or missing) <id/> elements.\nOffending execution\n\nId: '" + exec.getId()
+                        + "'\nPlugin: '" + this.groupId + ":" + this.artifactId + "'\n\n");
             }
+            executionMap.put(exec.getId(), exec);
         }
         this.executions = executions;
         return this;
     }
 
     public PomChangePlugin setPluginDependencies(List<Dependency> pluginDependencies) {
+        checkForNull("Plugin Dependencies", pluginDependencies);
         this.pluginDependencies = pluginDependencies;
-        return this;
-    }
-
-    public PomChangePlugin setGoals(Object goals) {
-        this.goals = goals;
         return this;
     }
 
@@ -127,21 +120,19 @@ public class PomChangePlugin extends AbstractArtifactPomOperation<PomChangePlugi
         return this;
     }
 
-    public PomChangePlugin removeGoals() {
-        removeGoals = true;
-        return this;
-    }
-
+    @Override
     public PomChangePlugin failIfNotPresent() {
         ifNotPresent = IfNotPresent.Fail;
         return this;
     }
 
+    @Override
     public PomChangePlugin warnIfNotPresent() {
         ifNotPresent = IfNotPresent.Warn;
         return this;
     }
 
+    @Override
     public PomChangePlugin noOpIfNotPresent() {
         ifNotPresent = IfNotPresent.NoOp;
         return this;
@@ -163,15 +154,11 @@ public class PomChangePlugin extends AbstractArtifactPomOperation<PomChangePlugi
         return pluginDependencies;
     }
 
-    public Object getGoals() {
-        return goals;
-    }
-
     public boolean isRemoveVersion() {
         return removeVersion;
     }
 
-    public boolean isRemovExtensions() {
+    public boolean isRemoveExtensions() {
         return removeExtensions;
     }
 
@@ -181,10 +168,6 @@ public class PomChangePlugin extends AbstractArtifactPomOperation<PomChangePlugi
 
     public boolean isRemovePluginDependencies() {
         return removePluginDependencies;
-    }
-
-    public boolean isRemoveGoals() {
-        return removeGoals;
     }
 
     @Override
@@ -202,12 +185,9 @@ public class PomChangePlugin extends AbstractArtifactPomOperation<PomChangePlugi
             model.getBuild().removePlugin(plugin);
 
             if (removeVersion) plugin.setVersion(null); else if (version != null) plugin.setVersion(version);
-            if (removeExtensions) plugin.setExecutions(null); else if (extensions != null) plugin.setExtensions(extensions);
+            if (removeExtensions) plugin.setExtensions(null); else if (extensions != null) plugin.setExtensions(extensions);
             if (removeExecutions) plugin.setExecutions(null); else if (executions != null) plugin.setExecutions(executions);
             if (removePluginDependencies) plugin.setDependencies(null); else if (pluginDependencies != null) plugin.setDependencies(pluginDependencies);
-            if (removeGoals) plugin.setGoals(null); else if (goals != null) plugin.setGoals(goals);
-
-            plugin.setExtensions(true);
 
             model.getBuild().addPlugin(plugin);
 
